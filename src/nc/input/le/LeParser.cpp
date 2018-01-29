@@ -222,6 +222,9 @@ void LeParser::doParse(QIODevice *in, core::image::Image *image, const LogToken 
         }
         long off = hpos.mz + h.data_pages_offset_from_top_of_file + (oh.page_map_index - 1) * h.memory_page_size;
         long len = oh.page_map_entries * h.memory_page_size;
+        if (oi == h.object_table_entries - 1) { // last object has last page
+            len -= h.memory_page_size - h.bytes_on_last_page;
+        }
         QByteArray bytes;
         if (!in->seek(off) || (bytes = in->read(len), bytes.size() != len)) {
             throw ParseError(tr("Truncated object body at 0x%1:0x%2 for object %3").arg(off, 1, 16).arg(len, 1, 16).arg(oi));
