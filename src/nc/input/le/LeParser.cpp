@@ -16,8 +16,8 @@ namespace le {
 namespace {
 
 struct header_pos {
-    long mz;
-    long le;
+    qint64 mz;
+    qint64 le;
 };
 
 using nc::core::input::read;
@@ -38,10 +38,10 @@ header_pos find_header_pos(QIODevice *in) {
             a = b;
             goto again;
         }
-        long mz = in->pos() - 2;
+        qint64 mz = in->pos() - 2;
         if (!in->seek(mz + 0x3c))
             break;
-        uint32_t le_off;
+        std::uint32_t le_off;
         if (!read(in, le_off))
             break;
         bo.convertFrom(le_off);
@@ -63,42 +63,42 @@ header_pos find_header_pos(QIODevice *in) {
 }
 
 #define LE_HEADER \
-    FIELD(uint16_t, signature) \
-    FIELD(uint8_t,  byte_order) \
-    FIELD(uint8_t,  word_order) \
-    FIELD(uint32_t, unused) \
-    FIELD(uint16_t, cpu) \
-    FIELD(uint16_t, os) \
-    FIELD(uint32_t, unused2) \
-    FIELD(uint32_t, unused3) \
-    FIELD(uint32_t, pages) \
-    FIELD(uint32_t, initial_object_CS_number) \
-    FIELD(uint32_t, initial_EIP) \
-    FIELD(uint32_t, initial_object_SS_number) \
-    FIELD(uint32_t, initial_ESP) \
-    FIELD(uint32_t, memory_page_size) \
-    FIELD(uint32_t, bytes_on_last_page) \
-    FIELD(uint32_t, fixup_section_size) \
-    FIELD(uint32_t, fixup_section_checksum) \
-    FIELD(uint32_t, loader_section_size) \
-    FIELD(uint32_t, loader_section_checksum) \
-    FIELD(uint32_t, offset_of_object_table) \
-    FIELD(uint32_t, object_table_entries) \
-    FIELD(uint32_t, object_page_map_offset) \
-    FIELD(uint32_t, object_iterate_data_map_offset) \
-    FIELD(uint32_t, resource_table_offset) \
-    FIELD(uint32_t, resource_table_entries) \
-    FIELD(uint32_t, resident_names_table_offset) \
-    FIELD(uint32_t, entry_table_offset) \
-    FIELD(uint32_t, module_directive_table_offset) \
-    FIELD(uint32_t, module_directive_entries) \
-    FIELD(uint32_t, fixup_page_table_offset) \
-    FIELD(uint32_t, fixup_record_table_offset) \
-    FIELD(uint32_t, imported_modules_name_table_offset) \
-    FIELD(uint32_t, inported_modules_count) \
-    FIELD(uint32_t, imported_procedure_name_table_offset) \
-    FIELD(uint32_t, per_page_checksum_table_offset) \
-    FIELD(uint32_t, data_pages_offset_from_top_of_file) \
+    FIELD(std::uint16_t, signature) \
+    FIELD(std::uint8_t,  byte_order) \
+    FIELD(std::uint8_t,  word_order) \
+    FIELD(std::uint32_t, unused) \
+    FIELD(std::uint16_t, cpu) \
+    FIELD(std::uint16_t, os) \
+    FIELD(std::uint32_t, unused2) \
+    FIELD(std::uint32_t, unused3) \
+    FIELD(std::uint32_t, pages) \
+    FIELD(std::uint32_t, initial_object_CS_number) \
+    FIELD(std::uint32_t, initial_EIP) \
+    FIELD(std::uint32_t, initial_object_SS_number) \
+    FIELD(std::uint32_t, initial_ESP) \
+    FIELD(std::uint32_t, memory_page_size) \
+    FIELD(std::uint32_t, bytes_on_last_page) \
+    FIELD(std::uint32_t, fixup_section_size) \
+    FIELD(std::uint32_t, fixup_section_checksum) \
+    FIELD(std::uint32_t, loader_section_size) \
+    FIELD(std::uint32_t, loader_section_checksum) \
+    FIELD(std::uint32_t, offset_of_object_table) \
+    FIELD(std::uint32_t, object_table_entries) \
+    FIELD(std::uint32_t, object_page_map_offset) \
+    FIELD(std::uint32_t, object_iterate_data_map_offset) \
+    FIELD(std::uint32_t, resource_table_offset) \
+    FIELD(std::uint32_t, resource_table_entries) \
+    FIELD(std::uint32_t, resident_names_table_offset) \
+    FIELD(std::uint32_t, entry_table_offset) \
+    FIELD(std::uint32_t, module_directive_table_offset) \
+    FIELD(std::uint32_t, module_directive_entries) \
+    FIELD(std::uint32_t, fixup_page_table_offset) \
+    FIELD(std::uint32_t, fixup_record_table_offset) \
+    FIELD(std::uint32_t, imported_modules_name_table_offset) \
+    FIELD(std::uint32_t, inported_modules_count) \
+    FIELD(std::uint32_t, imported_procedure_name_table_offset) \
+    FIELD(std::uint32_t, per_page_checksum_table_offset) \
+    FIELD(std::uint32_t, data_pages_offset_from_top_of_file) \
 
 enum {
     OBJECT_READABLE     = 1 << 0,
@@ -108,18 +108,18 @@ enum {
 };
 
 #define OBJ_HEADER \
-    FIELD(uint32_t, virtual_segment_size) \
-    FIELD(uint32_t, relocation_base_address) \
-    FIELD(uint32_t, object_flags) \
-    FIELD(uint32_t, page_map_index) \
-    FIELD(uint32_t, page_map_entries) \
-    FIELD(uint32_t, unused) \
+    FIELD(std::uint32_t, virtual_segment_size) \
+    FIELD(std::uint32_t, relocation_base_address) \
+    FIELD(std::uint32_t, object_flags) \
+    FIELD(std::uint32_t, page_map_index) \
+    FIELD(std::uint32_t, page_map_entries) \
+    FIELD(std::uint32_t, unused) \
 
 #define FIXUP_HEADER \
-    FIELD(uint8_t, src) \
-    FIELD(uint8_t, flags) \
-    FIELD(int16_t, srcoff) \
-    FIELD(uint8_t, object) \
+    FIELD(std::uint8_t, src) \
+    FIELD(std::uint8_t, flags) \
+    FIELD(std::int16_t, srcoff) \
+    FIELD(std::uint8_t, object) \
 
 #define EMIT_ALL \
     EMIT(LE_HEADER, le_header) \
@@ -199,8 +199,8 @@ void LeParser::doParse(QIODevice *in, core::image::Image *image, const LogToken 
     // = loading sections =
 
     std::vector<obj_header> sec_headers;
-    for (uint32_t oi = 0; oi < h.object_table_entries; ++oi) {
-        long pos = hpos.le + h.offset_of_object_table + 24 * oi;
+    for (std::uint32_t oi = 0; oi < h.object_table_entries; ++oi) {
+        qint64 pos = hpos.le + h.offset_of_object_table + 24 * oi;
         obj_header oh;
         if (!in->seek(pos) || !read(in, oh)) {
             throw ParseError(tr("Truncated object entry %1").arg(oi));
@@ -209,8 +209,8 @@ void LeParser::doParse(QIODevice *in, core::image::Image *image, const LogToken 
         sec_headers.push_back(oh);
         auto section = std::make_unique<core::image::Section>(
                             QString(QLatin1String(".seg%1")).arg(oi),
-                            long(oh.relocation_base_address),
-                            long(oh.page_map_entries * h.memory_page_size));
+                            ByteAddr(oh.relocation_base_address),
+                            ByteAddr(oh.page_map_entries * h.memory_page_size));
         section->setAllocated((oh.object_flags & OBJECT_DISCARDABLE) == 0);
         section->setReadable(oh.object_flags & OBJECT_READABLE);
         section->setWritable(oh.object_flags & OBJECT_WRITABLE);
@@ -220,8 +220,8 @@ void LeParser::doParse(QIODevice *in, core::image::Image *image, const LogToken 
         } else {
             section->setData(true);
         }
-        long off = hpos.mz + h.data_pages_offset_from_top_of_file + (oh.page_map_index - 1) * h.memory_page_size;
-        long len = oh.page_map_entries * h.memory_page_size;
+        qint64 off = hpos.mz + h.data_pages_offset_from_top_of_file + (oh.page_map_index - 1) * h.memory_page_size;
+        qint64 len = oh.page_map_entries * h.memory_page_size;
         if (oi == h.object_table_entries - 1) { // last object has last page
             len -= h.memory_page_size - h.bytes_on_last_page;
         }
@@ -238,17 +238,15 @@ void LeParser::doParse(QIODevice *in, core::image::Image *image, const LogToken 
         }
 
         core::image::Section *s = image->sections()[oi];
-        image->addSymbol(std::make_unique<core::image::Symbol>(core::image::SymbolType::NOTYPE, s->name(), long(oh.relocation_base_address), s));
+        image->addSymbol(std::make_unique<core::image::Symbol>(
+                    core::image::SymbolType::NOTYPE, s->name(), ByteAddr(oh.relocation_base_address), s));
     }
-
-    // TODO parseSymbols();
-    // TODO parseImports();
 
     // = loading fixups =
 
-    long fpt_off = hpos.le + h.fixup_page_table_offset;
-    std::vector<uint32_t> fixup_page_table(h.pages + 1);
-    long fpt_size = fixup_page_table.size() * 4;
+    qint64 fpt_off = hpos.le + h.fixup_page_table_offset;
+    std::vector<std::uint32_t> fixup_page_table(h.pages + 1);
+    qint64 fpt_size = fixup_page_table.size() * 4;
     if (!in->seek(fpt_off) || in->read((char *) &fixup_page_table[0], fpt_size) != fpt_size) {
         throw ParseError(tr("Truncated fixup page table at 0x%1:0x%2").arg(fpt_off, 1, 16).arg(fpt_size, 1, 16));
     }
@@ -256,26 +254,26 @@ void LeParser::doParse(QIODevice *in, core::image::Image *image, const LogToken 
         bo.convertFrom(s);
     }
 
-    for (long npage = 0; npage < h.pages; ++npage) {
-        long start = hpos.le + h.fixup_record_table_offset + fixup_page_table[npage];
-        long end = hpos.le + h.fixup_record_table_offset + fixup_page_table[npage + 1];
+    for (std::size_t npage = 0; npage < h.pages; ++npage) {
+        qint64 start = hpos.le + h.fixup_record_table_offset + fixup_page_table[npage];
+        qint64 end = hpos.le + h.fixup_record_table_offset + fixup_page_table[npage + 1];
         if (!in->seek(start)) {
             throw ParseError(tr("Truncated fixup block for page %1 at 0x%2").arg(npage).arg(start, 1, 16));
         }
 
-        uint32_t seci;
+        std::uint32_t seci;
         for (seci = 0; seci < sec_headers.size(); ++seci) {
-            long b = sec_headers[seci].page_map_index - 1, e = b +  sec_headers[seci].page_map_entries;
-            if (npage >= b && npage < e)
+            std::size_t b = sec_headers[seci].page_map_index - 1;
+            if (npage >= b && npage < b + sec_headers[seci].page_map_entries)
                 break;
         }
         if (seci == sec_headers.size()) {
             throw ParseError(tr("No section corresponds to page %1").arg(npage));
         }
-        long page_virt_addr = image->sections()[seci]->addr() + (npage + 1 - sec_headers[seci].page_map_index) * h.memory_page_size;
+        ByteAddr page_virt_addr = image->sections()[seci]->addr() + (npage + 1 - sec_headers[seci].page_map_index) * h.memory_page_size;
 
         while (start + 5 <= end) {
-            long start_mark = start;
+            qint64 start_mark = start;
             auto throw_truncated = [npage, start]() {
                 throw ParseError(tr("Truncated fixup for page %1 at 0x%2").arg(npage).arg(start, 1, 16));
             };
@@ -288,12 +286,12 @@ void LeParser::doParse(QIODevice *in, core::image::Image *image, const LogToken 
             if (fh.src != 7) {
                 throw ParseError(tr("Fixup at 0x%1 has unsupported src %2").arg(start_mark, 1, 16).arg(fh.src));
             }
-            uint32_t dst;
+            std::uint32_t dst;
             if (fh.flags == 0x10) {
                 checked_read(in, dst, throw_truncated);
                 start += 9;
             } else if (fh.flags == 0) {
-                uint16_t dst16;
+                std::uint16_t dst16;
                 checked_read(in, dst16, throw_truncated);
                 dst = dst16;
                 start += 7;
@@ -306,20 +304,17 @@ void LeParser::doParse(QIODevice *in, core::image::Image *image, const LogToken 
                 continue;
             }
 
-            long reloc_at = page_virt_addr + fh.srcoff;
             if (fh.object > sec_headers.size()) {
                 throw ParseError(tr("Fixup at 0x%1 mentions object %2, but binary has only %3 objects")
                                     .arg(start_mark, 1, 16).arg(fh.object).arg(sec_headers.size()));
             }
             image->addRelocation(std::make_unique<core::image::Relocation>(
-                    reloc_at,
+                    page_virt_addr + fh.srcoff,      // relocation virtual address
                     image->symbols()[fh.object - 1], // section alias as base
                     4,                               // 4 byte relocations only
                     dst));                           // offset from section start
         }
     }
-
-    // TODO parseExports();
 }
 
 } // namespace le
