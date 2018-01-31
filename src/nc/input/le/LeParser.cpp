@@ -337,6 +337,13 @@ void LeParser::doParse(QIODevice *in, core::image::Image *image, const LogToken 
                     image->symbols()[dstobj - 1], // section alias as base
                     width,                        // 4 byte relocations only
                     dst));                        // offset from section start
+
+            if (width == 4) {
+                uint32_t dst_virt = dst + image->sections()[dstobj - 1]->addr();
+                image->sections()[seci]->content().replace(
+                        page_virt_addr + fh.srcoff - image->sections()[seci]->addr(), // section offset
+                        4, (char *) &dst_virt, 4);
+            }
         }
     }
 }
