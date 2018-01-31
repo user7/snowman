@@ -119,7 +119,6 @@ enum {
     FIELD(std::uint8_t, src) \
     FIELD(std::uint8_t, flags) \
     FIELD(std::int16_t, srcoff) \
-    FIELD(std::uint8_t, object) \
 
 #define EMIT_ALL \
     EMIT(LE_HEADER, le_header) \
@@ -132,6 +131,10 @@ enum {
 EMIT_ALL
 #undef FIELD
 #undef EMIT
+
+static_assert(sizeof(le_header) == 132, "le_header has incorrect size");
+static_assert(sizeof(obj_header) == 24, "obj_header has incorrect size");
+static_assert(sizeof(fixup_header) == 4, "fixup_header has incorrect size");
 
 // -----------------------------------------------------------------------------
 #define EMIT(fields, name) void fix_byte_order(name &h) { fields }
@@ -272,47 +275,68 @@ void LeParser::doParse(QIODevice *in, core::image::Image *image, const LogToken 
         }
         ByteAddr page_virt_addr = image->sections()[seci]->addr() + (npage + 1 - sec_headers[seci].page_map_index) * h.memory_page_size;
 
-        while (start + 5 <= end) {
-            qint64 start_mark = start;
-            auto throw_truncated = [npage, start]() {
-                throw ParseError(tr("Truncated fixup for page %1 at 0x%2").arg(npage).arg(start, 1, 16));
+        // see Fixup Record Table in http://www.textfiles.com/programming/FORMATS/lxexe.txt
+        enum {
+            FIXUP_SRC_16BIT_SELECTOR = 2,
+            FIXUP_SRC_16BIT = 5,
+            FIXUP_SRC_32BIT = 7,
+            FIXUP_DST_FLAG_32BIT_TARGET_OFFSET = 0x10,
+            FIXUP_DST_FLAG_16BIT_OBJECT_ID = 0x40,
+        };
+        while (in->pos() < end) {
+            qint64 start_mark = in->pos();
+            auto throw_truncated = [npage, start_mark]() {
+                throw ParseError(tr("Truncated fixup for page %1 at 0x%2").arg(npage).arg(start_mark, 1, 16));
             };
             fixup_header fh;
             checked_read(in, fh, throw_truncated);
-            if (fh.src == 2) {
-                start += 5; // TODO ds word relocation
-                continue;
-            }
-            if (fh.src != 7) {
-                throw ParseError(tr("Fixup at 0x%1 has unsupported src %2").arg(start_mark, 1, 16).arg(fh.src));
-            }
-            std::uint32_t dst;
-            if (fh.flags == 0x10) {
-                checked_read(in, dst, throw_truncated);
-                start += 9;
-            } else if (fh.flags == 0) {
-                std::uint16_t dst16;
-                checked_read(in, dst16, throw_truncated);
-                dst = dst16;
-                start += 7;
+
+            std::uint16_t dstobj;
+            if (fh.flags & FIXUP_DST_FLAG_16BIT_OBJECT_ID) {
+                checked_read(in, dstobj, throw_truncated);
             } else {
-                throw ParseError(tr("Fixup at 0x%1 has unsupported flags 0x%2").arg(start_mark, 1, 16).arg(fh.flags, 1, 16));
+                std::uint8_t dstobj8;
+                checked_read(in, dstobj8, throw_truncated);
+                dstobj = dstobj8;
+            }
+            if (dstobj > sec_headers.size()) {
+                throw ParseError(tr("Fixup at 0x%1 mentions object %2, but binary has only %3 objects")
+                                    .arg(start_mark, 1, 16).arg(dstobj).arg(sec_headers.size()));
             }
 
+            if (fh.src == FIXUP_SRC_16BIT_SELECTOR) {
+                continue; // skipping rare segment selector relocations TODO
+            }
+
+            std::uint32_t dst;
+            std::uint16_t dst16;
+            ByteSize width = 4;
+            if (fh.src == FIXUP_SRC_16BIT) {
+                checked_read(in, dst16, throw_truncated);
+                dst = dst16;
+                width = 2;
+            } else {
+                if (fh.src != FIXUP_SRC_32BIT) {
+                    throw ParseError(tr("Fixup at 0x%1 has unsupported src %2").arg(start_mark, 1, 16).arg(fh.src));
+                }
+                if (fh.flags == FIXUP_DST_FLAG_32BIT_TARGET_OFFSET) {
+                    checked_read(in, dst, throw_truncated);
+                } else if (fh.flags == 0) {
+                    checked_read(in, dst16, throw_truncated);
+                    dst = dst16;
+                } else {
+                    throw ParseError(tr("Fixup at 0x%1 has unsupported flags 0x%2").arg(start_mark, 1, 16).arg(fh.flags, 1, 16));
+                }
+            }
             // skipping fixups that cross page lower boundary, they're accounted for by the previous page
             if (fh.srcoff < 0) {
                 continue;
             }
-
-            if (fh.object > sec_headers.size()) {
-                throw ParseError(tr("Fixup at 0x%1 mentions object %2, but binary has only %3 objects")
-                                    .arg(start_mark, 1, 16).arg(fh.object).arg(sec_headers.size()));
-            }
             image->addRelocation(std::make_unique<core::image::Relocation>(
-                    page_virt_addr + fh.srcoff,      // relocation virtual address
-                    image->symbols()[fh.object - 1], // section alias as base
-                    4,                               // 4 byte relocations only
-                    dst));                           // offset from section start
+                    page_virt_addr + fh.srcoff,   // relocation virtual address
+                    image->symbols()[dstobj - 1], // section alias as base
+                    width,                        // 4 byte relocations only
+                    dst));                        // offset from section start
         }
     }
 }
