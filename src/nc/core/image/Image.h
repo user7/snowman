@@ -24,6 +24,8 @@
 #pragma once
 
 #include <nc/config.h>
+#include <nc/common/ByteOrder.h>
+#include <nc/common/LogToken.h>
 
 #include <memory>
 #include <vector>
@@ -55,7 +57,10 @@ class Relocation;
  * An executable image.
  */
 class Image: public ByteSource {
+    Q_DECLARE_TR_FUNCTIONS(Image);
+
     Platform platform_;
+    ::nc::ByteOrder byteOrder_;
     std::vector<std::unique_ptr<Section>> sections_; ///< The list of sections.
     std::vector<std::unique_ptr<Symbol>> symbols_; ///< The list of symbols.
     boost::unordered_map<ConstantValue, Symbol *> value2symbol_; ///< Mapping from value to the symbol with this value.
@@ -192,6 +197,18 @@ public:
      * \return Address of the entry point.
      */
     const boost::optional<ByteAddr> &entrypoint() const { return entrypoint_; }
+
+    /**
+     * Sets byte order
+     *
+     * \param byteOrder Byte order.
+     */
+    void setByteOrder(::nc::ByteOrder byteOrder) { byteOrder_ = byteOrder; }
+
+    /**
+     * Applies relocations.
+     */
+    void link(const LogToken &log);
 };
 
 }}} // namespace nc::core::image

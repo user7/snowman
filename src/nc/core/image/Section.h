@@ -213,6 +213,13 @@ public:
     void setContent(QByteArray content) { content_ = std::move(content); }
 
     /**
+     * Gets the content of the section.
+     *
+     * \return Reference to content array.
+     */
+    QByteArray &content() { return content_; }
+
+    /**
      * Sets the external byte source with the content of the section.
      *
      * \param byteSource Pointer to the new external byte source. Can be nullptr.

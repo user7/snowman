@@ -37,6 +37,7 @@
 namespace nc { namespace core { namespace image {
 
 Image::Image():
+    byteOrder_(::nc::ByteOrder::Unknown),
     demangler_(new mangling::DefaultDemangler())
 {}
 
@@ -106,6 +107,54 @@ void Image::setDemangler(std::unique_ptr<mangling::Demangler> demangler) {
     assert(demangler != nullptr);
 
     demangler_ = std::move(demangler);
+}
+
+void Image::link(const LogToken &log) {
+    foreach(auto &r, relocations_) {
+        Section *rs = nullptr;
+        foreach(auto &s, sections_) {
+            if (s->addr() <= r->address()
+                && r->address() + r->size() <= s->addr() + s->size()) {
+                rs = &*s;
+                break;
+            }
+        }
+        if (rs == nullptr) {
+            log.debug(tr("Relocation at 0x%1 doen't point inside any section")
+                      .arg(r->address(), 1, 16));
+            continue;
+        }
+        uint64_t dst64 = r->symbol()->value().get() + r->addend();
+        uint32_t dst32 = static_cast<uint32_t>(dst64);
+        uint16_t dst16 = static_cast<uint16_t>(dst64);
+        void *buf;
+        switch (r->size()) {
+            case 8:
+                buf = &dst64;
+                break;
+            case 4:
+                buf = &dst32;
+                break;
+            case 2:
+                buf = &dst16;
+                break;
+            default:
+                log.debug(tr("Relocation at 0x%1 has unsupported width %2")
+                          .arg(r->address(), 1, 16).arg(r->size()));
+                continue;
+        }
+        ByteOrder::convert(&buf, r->size(), byteOrder_, ByteOrder::Current);
+        {
+            QByteArray o = rs->content().mid(r->address() - rs->addr(), r->size());
+            QByteArray n = QByteArray((const char *) buf, r->size());
+            if (o != n) {
+                log.debug(tr("mismatch %1 != %2")
+                          .arg(QString(o.toHex())).arg(QString(n.toHex())));
+            }
+        }
+	rs->content().replace(r->address() - rs->addr(),
+	                      r->size(), static_cast<char *>(buf), r->size());
+    }
 }
 
 }}} // namespace nc::core::image

@@ -166,6 +166,7 @@ private:
         } else {
             log_.warning(tr("Invalid byte order in ELF file: %1. Assuming host byte order.").arg(ehdr_.e_ident[EI_DATA]));
         }
+        image_->setByteOrder(byteOrder_);
 
         byteOrder_.convertFrom(ehdr_.e_machine);
         byteOrder_.convertFrom(ehdr_.e_shoff);

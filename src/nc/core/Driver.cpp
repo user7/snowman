@@ -52,6 +52,8 @@ void Driver::parse(Context &context, const QString &filename) {
 
     suitableParser->parse(&source, context.image().get(), context.logToken());
 
+    context.image()->link(context.logToken());
+
     context.logToken().info(tr("Parsing completed."));
 }
 

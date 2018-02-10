@@ -193,6 +193,7 @@ void LeParser::doParse(QIODevice *in, core::image::Image *image, const LogToken 
     if (h.word_order) {
         throw ParseError(tr("Big endian word order in LE is unsupported"));
     }
+    image->setByteOrder(nc::ByteOrder::LittleEndian);
     fix_byte_order(h);
     log.debug(toQString(h));
 

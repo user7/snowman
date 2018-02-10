@@ -104,6 +104,7 @@ public:
         }
 
         byteOrder_ = bitnessAndByteOrder->second;
+        image_->setByteOrder(byteOrder_);
 
         byteOrder_.convertFrom(header.magic);
         byteOrder_.convertFrom(header.cputype);
